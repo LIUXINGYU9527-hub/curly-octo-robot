@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>姓名转盘-精准对齐版</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{display:flex;flex-direction:column;align-items:center;padding:30px;background:#f4f7fa}
+.wrap{position:relative;margin-top:20px}
+#wheel{width:420px;height:420px;border-radius:50%;transition:transform 4s cubic-bezier(0.15,0.8,0.15,1);}
+.pointer{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:32px solid #e53935;position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:2}
+button{margin-top:30px;padding:12px 36px;font-size:18px;border:none;background:#2563eb;color:#fff;border-radius:10px;cursor:pointer}
+button:active{background:#1d4ed8}
+#result{margin-top:20px;font-size:22px;font-weight:bold;color:#111;height:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pointer"></div>
+  <canvas id="wheel"></canvas>
+</div>
+<button id="btnStart">开始转动</button>
+<div id="result"></div>
+
+<script>
+const list = [
+"刘星宇","于百泉","薛鹏程","闫文松","班乐","李治宏","张金辉","马鑫","李会超",
+"郭奇"
+];
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const btn = document.getElementById("btnStart");
+const resDom = document.getElementById("result");
+
+const size = 420;
+canvas.width = size;
+canvas.height = size;
+const r = size / 2;
+const total = list.length;
+const sectorDeg = 360 / total;
+let rotateDeg = 0;
+let spinning = false;
+
+const colors = ["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff","#ffc6ff"];
+
+function drawWheel(){
+  ctx.clearRect(0,0,size,size);
+  for(let i = 0; i < total; i++){
+    ctx.beginPath();
+    ctx.moveTo(r, r);
+    // 起始：从正上方(-90°)开始顺时针排布每一块
+    const start = (-90 + sectorDeg * i) * Math.PI / 180;
+    const end = (-90 + sectorDeg * (i+1)) * Math.PI / 180;
+    ctx.arc(r, r, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle="#ffffff";
+    ctx.lineWidth=1;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(r, r);
+    const mid = (-90 + sectorDeg * i + sectorDeg / 2) * Math.PI / 180;
+    ctx.rotate(mid);
+    ctx.font="13px sans-serif";
+    ctx.fillStyle="#222222";
+    ctx.textAlign="center";
+    ctx.fillText(list[i], r * 0.65, 5);
+    ctx.restore();
+  }
+}
+drawWheel();
+
+btn.onclick = function(){
+  if(spinning) return;
+  spinning = true;
+  resDom.textContent = "";
+
+  const randomTurn = 1800 + Math.random() * 2200;
+  rotateDeg += randomTurn;
+  canvas.style.transform = `rotate(${rotateDeg}deg)`;
+
+  setTimeout(()=>{
+    spinning = false;
+    // 核心修复：转盘顺时针转rotateDeg度
+    // 指针固定向上，相当于指针在转盘坐标系里逆时针转rotateDeg度
+    let pointerOnWheel = (-rotateDeg) % 360;
+    if(pointerOnWheel < 0) pointerOnWheel += 360;
+    const idx = Math.floor(pointerOnWheel / sectorDeg);
+    resDom.textContent = "✅ 抽到："+list[idx];
+  },4000)
+}
+</script>
+</body>
+</html>
